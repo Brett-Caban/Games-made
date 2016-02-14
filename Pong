@@ -1,0 +1,22 @@
+package pong;
+
+import javax.swing.JFrame;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class Pong {
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+         GameFrame frame = new GameFrame();
+        //sets up Jframe
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+    
+}
