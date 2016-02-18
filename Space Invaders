@@ -1,0 +1,1195 @@
+package spaceinvadersv4;
+
+import javax.swing.JFrame;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class SpaceInvadersv4 {
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+       GameFrame frame = new GameFrame();
+        //sets up Jframe
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+    
+}
+//-----------------------------------------------------------------------------------------------------
+package spaceinvadersv4;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.Random;
+import javax.swing.JPanel;
+import javax.swing.Timer;
+//imports
+
+public class GamePanel extends JPanel implements ActionListener {
+
+    private ArrayList<GameObject> gameObjects = new ArrayList<>(); //declared variables
+    private LaserCanon laserCanon;
+    private Spaceship spaceShip;
+    private Projectile projectile;
+    private Projectile enemyProjectile;
+    private Squadron squadron;
+    private Timer projectileTimer;
+    private Timer epTimer;
+    private StatusPanel stat;
+    private ControlFrame controls;
+    private int points = 0;
+    private boolean gameOn = false;
+    private int lives = 3;
+    private Timer shotTimer;
+
+    public GamePanel() {//constructor that sets GamePanel JPanel
+        setBackground(Color.BLACK);
+        setVisible(true);
+        setPreferredSize(new Dimension(800, 500));
+        addKeyListener(new KeyListener());
+        setFocusable(true);
+    }
+
+    public void gameOver() {//method that checks if game is over or not
+        gameOn = false;
+        gameObjects.removeAll(gameObjects);
+    }
+
+    public void addGameObject(GameObject go) {
+        getGameObjects().add(go);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) { //paintComponent 
+        super.paintComponent(g);
+        if (gameOn == false) {
+            g.setColor(Color.WHITE);
+            g.drawString("Press start to play", 250, 250);
+        }
+        getGameObjects().stream().filter((game) -> (game.isVisible())).forEach((game) -> {
+            game.draw(g);
+        });
+        repaint();
+    }
+
+    /**
+     * @param stat the stat to set
+     */
+    public void setStat(StatusPanel stat) { //sets statuspanel object
+        this.stat = stat;
+    }
+
+    public void setControls(ControlFrame controls) {//sets controlframe object
+        this.controls = controls;
+    }
+
+    /**
+     * @return the gameObjects
+     */
+    public ArrayList<GameObject> getGameObjects() {//sets arraylist gameobjects
+        return gameObjects;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ae) { //actionPerformed method used to add all gameObjects to the arraylist
+        if (ae.getSource() == controls.getStart() && gameOn == false) {//If game starts all objects stay on panel and play game
+
+            laserCanon = new LaserCanon(800, 500);
+            gameObjects.add(getLaserCanon());
+            getLaserCanon().setVisible(true);
+
+            projectile = new Projectile();
+            gameObjects.add(projectile);
+            ProjectileTimerListener pListener = new ProjectileTimerListener();
+            projectileTimer = new Timer(10, pListener);
+
+            enemyProjectile = new Projectile();
+            enemyProjectile.setSpeed(-enemyProjectile.getSpeed());
+            gameObjects.add(enemyProjectile);
+            epTimer = new Timer(50, pListener);
+
+            shotTimer = new Timer(1000, pListener);
+            shotTimer.setRepeats(false);
+            shotTimer.start();
+
+            spaceShip = new Spaceship(this);
+            gameObjects.add(spaceShip);
+            spaceShip.startLaunchTimer();
+
+            squadron = new Squadron();
+            squadron.setGamePanel(this);
+            gameObjects.add(squadron);
+            gameOn = true;
+
+            this.requestFocus();
+
+        }
+        if (ae.getSource() == controls.getStop()) {//if user is finished and clicks stop. Program shuts off
+            System.exit(0);
+        }
+        if (ae.getSource() == controls.getRestart() && gameOn == true) {//if user clicks restart, new game begins.
+
+            gameObjects.removeAll(gameObjects);
+
+            laserCanon = new LaserCanon(800, 500);
+            gameObjects.add(getLaserCanon());
+            getLaserCanon().setVisible(true);
+
+            projectile = new Projectile();
+            gameObjects.add(projectile);
+            projectileTimer = new Timer(10, new ProjectileTimerListener());
+
+            spaceShip = new Spaceship(this);
+            gameObjects.add(spaceShip);
+            spaceShip.startLaunchTimer();
+
+            squadron = new Squadron();
+            squadron.setGamePanel(this);
+            gameObjects.add(squadron);
+            gameOn = true;
+
+            this.requestFocus();
+        }
+    }
+
+    /**
+     * @return the laserCanon
+     */
+    public LaserCanon getLaserCanon() {
+        return laserCanon;
+    }
+
+    private class KeyListener extends KeyAdapter { // KeyListener manages the movement of the LaserCanon and the movement of the projectile
+
+        @Override
+        public void keyPressed(KeyEvent ke) {
+            if (gameOn == true) {//check if game is on
+                int key = ke.getKeyCode();//make int and set to keyCode so the KeyListener can look for an action 
+
+                if (key == KeyEvent.VK_RIGHT) {//if key equals right key pressed  it moves lasercanon to the right
+                    getLaserCanon().Right();
+                    repaint();
+                } else if (key == KeyEvent.VK_LEFT) {//if key equals left key pressed it moves lasercanon to the left
+                    getLaserCanon().Left();
+                    repaint();
+                } else if (key == KeyEvent.VK_SPACE) { //if key equals space 
+
+                    if (!projectile.isVisible()) {//check if projectile isn't visible
+                        projectile.setVisible(true);//make a projectile visible
+                        projectile.getLocation().x = getLaserCanon().getLocation().x; //set x coordinates of projectile to the LaserCanon
+                        projectile.getLocation().y = getLaserCanon().getLocation().y; //set y coordinates of projectile to the LaserCanon
+                        projectileTimer.start();//How often the projectile moves
+
+                    }
+                }
+            }
+        }
+    }
+
+    public void Destruction(Projectile projectile, Invader invader) {//This destruction method deals with the destruction of projectile and invader
+        if (gameOn == true) {
+            if (rectCollision(projectile.getLocation().x, projectile.getLocation().y, 7, 30,
+                    invader.getLocation().x, invader.getLocation().y, invader.getWidth(), invader.getHeight())
+                    || rectCollision(invader.getLocation().x, invader.getLocation().y, invader.getWidth(), invader.getHeight(),
+                            projectile.getLocation().x, projectile.getLocation().y, 7, 30)) {
+                if (projectile.isVisible() && invader.isAlive()) {
+                    invader.setAlive(false);
+                    projectile.setVisible(false);
+                    PointDisplay display = new PointDisplay(invader.getPointValue(), this, invader.getColor());
+                    display.getLocation().x = invader.getLocation().x;
+                    display.getLocation().y = invader.getLocation().y;
+                    gameObjects.add(display);
+                    points += invader.getPointValue();
+                    stat.scoreLB.setText("Score " + String.valueOf(points));
+                    projectileTimer.stop();
+                    if (invader != spaceShip) {
+                        squadron.setNumVisible(squadron.getNumVisible() - 1);
+                    }
+                    if (squadron.getNumVisible() < 1) {
+                        gameObjects.remove(squadron);
+                        squadron = new Squadron();
+                        squadron.setGamePanel(this);
+                        gameObjects.add(squadron);
+                    }
+
+                    repaint();
+                }
+            }
+        }
+    }
+
+    public void Destruction(Projectile projectile, LaserCanon player) { // Destruction method manages the destruction of the projectile and LaserCanon class 
+        if (gameOn == true) {
+            if (rectCollision(projectile.getLocation().x, projectile.getLocation().y, 7, 30,
+                    player.getLocation().x, player.getLocation().y, 50, 20)
+                    || rectCollision(player.getLocation().x, player.getLocation().y, 50, 20,
+                            projectile.getLocation().x, projectile.getLocation().y, 7, 30)) {
+                if (projectile.isVisible()) {
+                    projectile.setVisible(false);
+                    lives -= 1;
+                    stat.lives.setText("Lives: " + lives);
+                    if (lives == 0) {
+                        gameOver();
+                    }
+                }
+            }
+        }
+    }
+
+    private class ProjectileTimerListener implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent fire) {
+            if (fire.getSource() == projectileTimer) {//manages projectile Timer and calls Destruction method for projectile and SpaceShip
+                projectile.move();
+                Destruction(projectile, spaceShip);
+
+                for (Alien[] alien : squadron.getAliens()) { //manages destruction of projectile and alien
+                    for (Alien a : alien) {
+                        Destruction(projectile, a);
+                    }
+                }
+            } else if (fire.getSource() == epTimer) {
+                enemyProjectile.move();
+                
+                Destruction(enemyProjectile, laserCanon);
+                if (!enemyProjectile.isVisible()) {
+                    epTimer.stop();
+                    shotTimer.start();
+                }
+            } else if (fire.getSource() == shotTimer) {
+                ArrayList<Alien> livingAliens = new ArrayList<Alien>();
+                
+                for (Alien[] alien : squadron.getAliens()) { //manages destruction of projectile and alien
+                    for (Alien a : alien) {
+                        if(a.isAlive()){
+                            livingAliens.add(a);
+                        }
+                    }
+                }
+                Random rand = new Random();
+                Alien shooter = livingAliens.get(rand.nextInt(livingAliens.size())); //manages Alien shooter
+                enemyProjectile.getLocation().x = shooter.getLocation().x;
+                enemyProjectile.getLocation().y = shooter.getLocation().y;
+                enemyProjectile.setVisible(true);
+                epTimer.start();
+            }
+        }
+    }
+
+    public boolean rectCollision(int r1x, int r1y, int r1w, int r1h, int r2x, int r2y, int r2w, int r2h) {
+        return (isBetween(r1x, r2x, r2x + r2w)
+                || isBetween(r1x + r1w, r2x, r2x + r2w))
+                && (isBetween(r1y, r2y, r2y + r2h)
+                || isBetween(r1y + r1h, r2y, r2y + r2h)); // keeps the lasercanon from leaving the game
+    }
+
+    public boolean isBetween(int a, int b, int c) {
+        return (a >= b && a <= c);
+    }
+
+    @Override
+    public String toString() {
+        String GamePanel = super.toString() + " ";
+        return GamePanel;
+    }
+
+   
+}
+//-----------------------------------------------------------------------------------------------------------------------
+package spaceinvadersv4;
+
+import com.sun.javafx.scene.traversal.Direction;
+import java.util.Random;
+import javax.swing.Timer;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public abstract class Invader extends GameObject {//abstract
+    private int pointValue;//declare variables
+    private int speed;
+    private Direction direction;
+    private int height;
+    private int width;
+    private Random rand;
+    private boolean alive;
+    
+    public Invader(){//initialize
+        pointValue = 0;
+        speed = 0;
+        direction = null;
+        height = 0;
+        width = 0;
+        rand = new Random();
+    }
+
+    /**
+     * @return the pointValue
+     */
+    public int getPointValue() {//gets Points
+        return pointValue;
+    }
+
+    /**
+     * @param pointValue the pointValue to set
+     */
+    public void setPointValue(int pointValue) {//sets points
+        this.pointValue = pointValue;
+    }
+
+    /**
+     * @return the speed
+     */
+    public int getSpeed() {//gets speed
+        return speed;
+    }
+
+    /**
+     * @param speed the speed to set
+     */
+    public void setSpeed(int speed) {//sets speed
+        this.speed = speed;
+    }
+
+    /**
+     * @return the height
+     */
+    public int getHeight() {
+        return height;
+    }
+
+    /**
+     * @param height the height to set
+     */
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    /**
+     * @return the width
+     */
+    public int getWidth() {
+        return width;
+    }
+
+    /**
+     * @param width the width to set
+     */
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    /**
+     * @return the direction
+     */
+    public Direction getDirection() {
+        return direction;
+    }
+
+    /**
+     * @param direction the direction to set
+     */
+    public void setDirection(Direction direction) {
+        this.direction = direction;
+    }
+
+    /**
+     * @return the rand
+     */
+    public Random getRand() {
+        return rand;
+    }
+
+    /**
+     * @param rand the rand to set
+     */
+    public void setRand(Random rand) {
+        this.rand = rand;
+    }
+    
+     public String toString(){
+        String finalString;
+        finalString = getPointValue()+"n/" + getSpeed()+"n/" + getDirection()+"n/" + getHeight()+"n/" +getWidth()+"n/"+ getRand();
+        return finalString;
+    }
+
+    /**
+     * @return the alive
+     */
+    public boolean isAlive() {//checks if object is alive
+        return alive;
+    }
+
+    /**
+     * @param alive the alive to set
+     */
+    public void setAlive(boolean alive) {//sets  an object alive
+        this.alive = alive;
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+package spaceinvadersv4;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Point;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public abstract class GameObject {
+    
+    private boolean visible;//declare variables
+    private Point location;
+    private Color color;
+    
+    public GameObject(){ //set variables 
+        visible = true;
+        location = new Point(0,0);
+        color = null;  
+    
+    }
+    
+    public GameObject(boolean visible, Point location, Color color){
+        
+        this.visible = visible;
+        this.location = location;
+        this.color = color;
+    }
+
+    /**
+     * @return the visible
+     */
+    public boolean isVisible() {
+        return visible;
+    }
+
+    /**
+     * @param visible the visible to set
+     */
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
+
+    /**
+     * @return the location
+     */
+    public Point getLocation() {
+        return location;
+    }
+
+    /**
+     * @param location the location to set
+     */
+    public void setLocation(Point location) {
+        this.location = location;
+    }
+
+    /**
+     * @return the color
+     */
+    public Color getColor() {
+        return color;
+    }
+
+    /**
+     * @param color the color to set
+     */
+    public void setColor(Color color) {
+        this.color = color;
+    }
+    
+    public void draw(Graphics g){//abstract
+        
+    }
+    
+    /**
+     *
+     */
+    public String toString(){
+    String finalString;
+    finalString = isVisible()+"n/ " + getLocation()+"n/ " + getColor();
+    return finalString;
+}
+}
+//-----------------------------------------------------------------------------------------------------------------------
+package spaceinvadersv4;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+import java.awt.Graphics;
+import java.awt.Polygon;
+
+public class Alien extends Invader {
+
+    private int alienType;//declared
+
+    public Alien() {
+        alienType = 0;//initialize
+        setWidth(10);
+        setHeight(10);
+        setAlive(true);
+    }
+
+    /**
+     * @return the alienType
+     */
+    public int getAlienType() {
+        return alienType;
+    }
+
+    /**
+     * @param alienType the alienType to set
+     */
+    public void setAlienType(int alienType) {
+        this.alienType = alienType;
+    }
+
+    public void draw(Graphics g) {
+        g.setColor(getColor());
+        if (isAlive()) {
+
+            int[] x = {getLocation().x, getLocation().x + getWidth() / 2, getLocation().x + getWidth()};
+            int[] y = {getLocation().y - getHeight(), getLocation().y, getLocation().y - getHeight()};
+
+            Polygon triangle = new Polygon(x, y, x.length);
+            g.fillPolygon(triangle);
+        }
+
+    }
+
+    public String toString() {
+        String finalString;
+        finalString = "n/" + getAlienType();
+        return finalString;
+    }
+}
+//------------------------------------------------------------------------------------------------------------------------------------
+package spaceinvadersv4;
+
+import java.awt.Color;
+import java.awt.FlowLayout;
+import javax.swing.JButton;
+import javax.swing.JPanel;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class ControlFrame extends JPanel {
+    
+    private JButton start;//declare variables
+    private JButton stop;
+    private JButton restart;
+    private GamePanel gamePanel;
+    
+    public ControlFrame(){//initialize
+        setSize(100,600);
+        setLayout( new FlowLayout());
+        setBackground(Color.RED);
+        setVisible(true);
+        
+        start = new JButton("Start");
+        stop = new JButton("Stop");
+        restart = new JButton("Restart");
+        add(start);
+        add(stop);
+        add(restart);
+        
+    }
+
+    /**
+     * @return the gamePanel
+     */
+    public GamePanel getGamePanel() {
+        return gamePanel;
+    }
+
+    /**
+     * @param gamePanel the gamePanel to set
+     */
+    public void setGamePanel(GamePanel gamePanel) {//set ActionListeners to JButtons
+        this.gamePanel = gamePanel;
+        start.addActionListener(gamePanel);
+        stop.addActionListener(gamePanel);
+        restart.addActionListener(gamePanel);
+       
+    }
+
+    /**
+     * @return the start
+     */
+    public JButton getStart() {
+        return start;
+    }
+
+    /**
+     * @return the stop
+     */
+    public JButton getStop() {
+        return stop;
+    }
+
+    /**
+     * @return the restart
+     */
+    public JButton getRestart() {
+        return restart;
+    }
+}
+//-----------------------------------------------------------------------------------------------------------------------------------
+package spaceinvadersv4;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.FlowLayout;
+import javax.swing.JFrame;
+import static javax.swing.JFrame.EXIT_ON_CLOSE;
+import javax.swing.JPanel;
+import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
+
+
+public class GameFrame extends JFrame {
+    
+    
+   public GameFrame(){
+       
+      GamePanel gPanel = new GamePanel();//sets gamepanel to the JFrame
+      setLayout(new BorderLayout());
+      setResizable(false);
+       
+       gPanel.setBackground(Color.BLACK);
+       add(gPanel, BorderLayout.CENTER);
+       
+       StatusPanel stats = new StatusPanel();//sets statusPanel to the JFrame
+       stats.setBackground(Color.RED);
+       add(stats, BorderLayout.NORTH);
+       gPanel.setStat(stats);
+       
+       ControlFrame controls = new ControlFrame();//sets controlFrame to the JFrame
+       controls.setBackground(Color.RED);
+       add(controls, BorderLayout.SOUTH);
+       gPanel.setControls(controls);
+       controls.setGamePanel(gPanel);
+       
+       
+       pack();
+   }
+           
+   
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+package spaceinvadersv4;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+import java.awt.Color;
+import java.awt.Graphics;
+
+
+public class LaserCanon extends GameObject {
+
+    private final int pnlWidth;// declare variables 
+    private final int pnlHeight;
+    private final int Length = 20;
+    private final int Width = 50;
+    private final int speed = 30;
+
+    public LaserCanon(int panelWidth, int panelHeight) { //calls from super class and sets to true and sets position on panel
+        super();
+        setVisible(true);
+        getLocation().x = panelWidth/2;
+        getLocation().y = panelHeight - Length;
+        pnlWidth = panelWidth;
+        pnlHeight = panelHeight;
+    }
+
+    @Override
+    public void draw(Graphics g) { //sets up shape of LaserCanon
+        g.setColor(Color.BLUE);
+        g.fillRect(getLocation().x, getLocation().y, Width, Length);
+        setVisible(true);
+    }
+
+    @Override
+    public String toString() {
+        String laserCanonProperties = super.toString() + " " + pnlHeight + " " + pnlWidth + " " + getLocation().x + " " + getLocation().y + " " + speed;
+        return laserCanonProperties;
+    }
+
+    public void Right() {//method that controls how the lasercanon moves right
+        getLocation().x = (getLocation().x + speed);
+
+        if (getLocation().x >= pnlWidth - Width) {
+            getLocation().x = pnlWidth - Width;
+        }
+    }
+
+    public void Left() {//method that controls how the lasercanon moves left
+        getLocation().x = (getLocation().x - speed);
+
+        if (getLocation().x <= 0) {
+            getLocation().x = 0;
+        }
+    }
+}
+//------------------------------------------------------------------------------------------------------------------------
+package spaceinvadersv4;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.Timer;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class PointDisplay extends GameObject implements ActionListener {
+
+    private int points;//delcare variables
+    private Timer ptTime;
+    private GamePanel pans;
+
+    PointDisplay(int points, GamePanel pans, Color color) {//initialize
+        this.points = points;
+        this.pans = pans;
+        ptTime = new Timer(1000, this);
+        ptTime.start();
+        setColor(color);
+        setLocation(new Point());
+    }
+
+    @Override
+    public void draw(Graphics g) {//drawpoints and gets color of designated alien
+        g.setColor(getColor());
+
+        g.drawString(String.valueOf(points), getLocation().x, getLocation().y);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ae) {//stops points and removes game objects
+        ptTime.stop();
+        pans.getGameObjects().remove(this);
+    }
+
+}
+//--------------------------------------------------------------------------------------------------------------------
+package spaceinvadersv4;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+import java.awt.Color;
+import java.awt.Graphics;
+
+public class Projectile extends GameObject{
+    private int speed; //declare speed
+
+    
+    public Projectile(){
+        speed = 15;
+        getLocation().x = 500;//set speed and location and set it to false until another method calls for it
+        getLocation().y = 750;     
+        setVisible(false);
+    }
+    /**
+     * @return the speed
+     */
+    public int getSpeed() {
+        return speed;
+    }
+    /**
+     * @param speed the speed to set
+     */
+    public void setSpeed(int speed) {
+        this.speed = speed;
+    }  
+     @Override
+    public void draw(Graphics g) { //set shape of projectile
+    g.setColor(Color.WHITE);
+    g.fillRect(getLocation().x, getLocation().y, 7, 30);
+    }
+    public void move(){//method that sets speed and location to control direction of projectile
+        getLocation().y -= speed;
+        if (getLocation().y < -20 || getLocation().y > 1000) {
+            setVisible(false);
+        }
+    }
+    @Override
+    public String toString(){
+        String projectileProperties = super.toString() + getLocation().x + " " + getLocation().y + " " + speed;
+        return projectileProperties;
+    }
+}
+//------------------------------------------------------------------------------------------------------------------------
+package spaceinvadersv4;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Random;
+import javax.swing.Timer;
+
+public class Spaceship extends Invader {
+
+    private Timer moveTimer;//declare variables
+    private Timer launchTimer;
+    private GamePanel gamePane;
+
+    public Spaceship(GamePanel gamePanel) {//constructor that sets characteristics of Spaceship, its launchtimer, location, random generation to the gamePanel
+        setVisible(true);
+        setSpeed(3);
+        this.gamePane = gamePanel;
+        getLocation().x = 0;
+        getLocation().y = 25;
+
+        moveTimer = new Timer(10, new TimerListener());
+        Random rand = getRand();
+        
+        launchTimer = new Timer((rand.nextInt(21) + 5)*1000, new TimerListener());
+        launchTimer.start();
+        setWidth(40);
+        setHeight(20);
+    }
+
+    public void invade() {//sets spaceship off if it leaves the gamePanel
+        getLocation().x = (getLocation().x + getSpeed());
+        if (getLocation().x > 1400 || getLocation().x < -200) {
+            setVisible(false);
+            stopMoveTimer();
+            startLaunchTimer();
+        }
+    }
+
+    public void startMoveTimer() {
+        moveTimer.start();
+    }
+
+    public void stopMoveTimer() {
+        moveTimer.stop();
+        
+    }
+
+    public void startLaunchTimer() {//random generator that sets up launch of the spaceship
+        Random rand = getRand();
+        launchTimer.setDelay((rand.nextInt(21) + 5)*1000);
+        launchTimer.start();
+    }
+
+    public void stopLaunchTimer() {
+        launchTimer.stop();
+        
+    }
+
+    @Override
+    public void draw(Graphics g) {//makes shape of spaceship
+        g.setColor(Color.RED);
+        if (isAlive()) {
+            g.fillOval(getLocation().x, getLocation().y, getWidth(), getHeight());
+        }
+    }
+
+    @Override
+    public String toString() {
+        String spaceShipProperties = super.toString() + moveTimer + " " + launchTimer + " " + getLocation().x + " " + getLocation().y;
+        return spaceShipProperties;
+    }
+
+    @Override
+    public void setAlive(boolean alive) {
+        super.setAlive(alive);
+        startLaunchTimer();
+        stopMoveTimer();
+    }
+
+    private class TimerListener implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent ae) { //ActionPerformed for moveTimer and launchTimer, getSource checks for which timer to use
+            if (ae.getSource() == moveTimer) {
+                if (isAlive()) {
+                    invade();
+                }
+            } else if (ae.getSource() == launchTimer) {
+
+                Random rand = getRand();
+                setPointValue(50 + rand.nextInt(6) * 50);
+                if (rand.nextInt(2) == 0) {
+                    getLocation().x = 0;
+                    setSpeed(3);
+
+                } else {
+                    getLocation().x = 1300;
+                    setSpeed(-3);
+                }
+                setAlive(true);
+                setVisible(true);
+                launchTimer.stop();
+                startMoveTimer();
+            }
+
+            gamePane.repaint();
+        }
+    }
+
+}
+//--------------------------------------------------------------------------------------------------------------------------------
+package spaceinvadersv4;
+
+
+import java.awt.Color;
+import java.awt.Point;
+import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.Timer;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class Squadron extends GameObject {
+
+    private final int SQUADRONROWS = 5;//declare variablees
+    private final int SQUADRONCOLUMNS = 12;
+    private Alien[][] aliens = new Alien[SQUADRONROWS][SQUADRONCOLUMNS];
+    private Direction direction;
+    private Timer moveTimer;
+    private int numVisible;
+    static int level = 0;
+    int time = 400;
+    int countDown = 4;
+
+    enum Direction {
+
+        EAST, WEST//sets direction of squadron
+    }
+
+    private GamePanel gamePanel;
+
+    public Squadron() {
+        aliens = new Alien[SQUADRONROWS][SQUADRONCOLUMNS];//intializing
+        direction = Direction.EAST;
+        moveTimer = new Timer(time, new TimerListener());
+        moveTimer.start();
+        numVisible = 60;
+        for (int i = 0; i < aliens.length; i++) {
+            for (int j = 0; j < aliens[i].length; j++) {
+
+                Alien alien = new Alien();
+                alien.setLocation(new Point(j * 35 + 50, i * 35 + 50 + level * 20));//manages movement of alien squadron
+                alien.setSpeed(20);
+                if (4 - i < 2) {//sets point value, type of alien and color
+                    alien.setAlienType(0);
+                    alien.setPointValue(10);
+                    alien.setColor(Color.yellow);
+                } else if (4 - i < 4) {
+                    alien.setAlienType(1);
+                    alien.setPointValue(20);
+                    alien.setColor(Color.blue);
+
+                } else {
+                    alien.setAlienType(2);
+                    alien.setPointValue(40);
+                    alien.setColor(Color.GREEN);
+                }
+                aliens[i][j] = alien;
+            }
+        }
+        level++;
+    }
+
+    public void draw(Graphics g) {//draws aliens
+        //g.drawFont(Tim)
+        for (Alien[] a : aliens) {
+            for (Alien alien : a) {
+                if (alien.isVisible()) {
+                    alien.draw(g);
+                }
+            }
+
+        }
+    }
+
+    /**
+     * @return the aliens
+     */
+    public Alien[][] getAliens() {
+        return aliens;
+    }
+
+    /**
+     * @param aliens the aliens to set
+     */
+    public void setAliens(Alien[][] aliens) {
+        this.aliens = aliens;
+    }
+
+    /**
+     * @return the direction
+     */
+    public Direction getDirection() {
+        return direction;
+    }
+
+    /**
+     * @param direction the direction to set
+     */
+    public void setDirection(Direction direction) {
+        this.direction = direction;
+    }
+
+    /**
+     * @return the moveTimer
+     */
+    public Timer getMoveTimer() {
+        return moveTimer;
+    }
+
+    /**
+     * @param moveTimer the moveTimer to set
+     */
+    public void setMoveTimer(Timer moveTimer) {
+        this.moveTimer = moveTimer;
+    }
+
+    /**
+     * @return the numVisible
+     */
+    public int getNumVisible() {
+        return numVisible;
+    }
+
+    /**
+     * @param numVisible the numVisible to set
+     */
+    public void setNumVisible(int numVisible) {
+        this.numVisible = numVisible;
+    }
+
+    /**
+     * @return the gamePanel
+     */
+    public GamePanel getGamePanel() {
+        return gamePanel;
+    }
+
+    /**
+     * @param gamePanel the gamePanel to set
+     */
+    public void setGamePanel(GamePanel gamePanel) {
+        this.gamePanel = gamePanel;
+    }
+
+    public String toString() {
+        String finalString;
+        finalString = getAliens() + "n/" + getDirection() + "n/" + getMoveTimer() + "n/" + getNumVisible() + "n/" + getGamePanel();
+        return finalString;
+    }
+
+    private class TimerListener implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent ae) {//actionPerformed that handles squadron movement going down
+            boolean goDown = false;
+            countDown -= 1;
+            if (countDown == 0) {
+                countDown = 4;
+                if (time > 160) {
+                    time -= 4;
+                    moveTimer.setDelay(time);
+                }
+            }
+            for (Alien[] alien : aliens) {
+                for (Alien a : alien) {//makes aliens move down
+                    a.getLocation().x += a.getSpeed();
+                    if ((a.getSpeed() > 0 && a.getLocation().x > gamePanel.getWidth() - 20 - a.getWidth())
+                            || (a.getSpeed() < 0 && a.getLocation().x < 20)) {
+                        goDown = true;
+                    }
+                }
+            }
+            if (goDown == true) {// if statement that checks if aliens goes down
+
+                for (int i = 0; i < aliens.length; i++) {
+                    for (int j = 0; j < aliens[i].length; j++) {
+
+                        Alien alien = aliens[i][j];
+                        alien.getLocation().y += 20;
+                        alien.setSpeed(-alien.getSpeed());
+                        if(alien.isAlive() && alien.getLocation().y + alien.getHeight() > gamePanel.getLaserCanon().getLocation().y) {
+                            gamePanel.gameOver();//checks if alien passes border, ends game
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+//------------------------------------------------------------------------------------------------------------------------------------------
+package spaceinvadersv4;
+
+import java.awt.Color;
+import java.awt.FlowLayout;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class StatusPanel extends JPanel {
+    
+    JLabel scoreLB, lives;
+    
+    public StatusPanel(){//sets up statuspanel
+        setSize(100,600);
+        setLayout(new FlowLayout());
+        setBackground(Color.RED);
+        setVisible(true);
+        scoreLB = new JLabel("Score: ");
+       // scoreLB.setColor(Color.RED);
+        add(scoreLB);
+        lives = new JLabel("Lives: 3");
+        add(lives);
+        
+    }
+    
+}
