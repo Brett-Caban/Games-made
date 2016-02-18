@@ -1,0 +1,508 @@
+package drunkenbug;
+
+import javax.swing.JFrame;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class DrunkenBug {
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+         Frame frame = new Frame();
+        //sets up Jframe
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+    
+}
+//-----------------------------------------------------------------------------------------------------
+package drunkenbug;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Point;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+
+ 
+public abstract class GameObject {
+    
+    private boolean visible;//declare variables
+    private Point location;
+    private Color color;
+    
+    public GameObject(){ //set variables 
+        visible = true;
+        location = new Point(0,0);
+        color = null;  
+    
+    }
+    
+    public GameObject(boolean visible, Point location, Color color){
+        
+        this.visible = visible;
+        this.location = location;
+        this.color = color;
+    }
+
+    /**
+     * @return the visible
+     */
+    public boolean isVisible() {
+        return visible;
+    }
+
+    /**
+     * @param visible the visible to set
+     */
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
+
+    /**
+     * @return the location
+     */
+    public Point getLocation() {
+        return location;
+    }
+
+    /**
+     * @param location the location to set
+     */
+    public void setLocation(Point location) {
+        this.location = location;
+    }
+
+    /**
+     * @return the color
+     */
+    public Color getColor() {
+        return color;
+    }
+
+    /**
+     * @param color the color to set
+     */
+    public void setColor(Color color) {
+        this.color = color;
+    }
+    
+    public void draw(Graphics g){//abstract
+        
+    }
+    
+    /**
+     *
+     */
+    public String toString(){
+    String finalString;
+    finalString = isVisible()+"n/ " + getLocation()+"n/ " + getColor();
+    return finalString;
+}
+}
+//----------------------------------------------------------------------------------------------------------------
+package drunkenbug;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.util.Random;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class Bug extends GameObject {
+    private final int speed = 30;
+    private final int pnlWidth; 
+    private final int pnlHeight;
+    private final int Length = 50;
+    private final int Width = 20;
+    private int bugStepCount;
+ 
+    
+    public Bug(int panelWidth, int panelHeight){
+        super();
+        getLocation().x = panelWidth;
+        getLocation().y = panelHeight;
+        setVisible(true);
+        pnlWidth = panelWidth;
+        pnlHeight = panelHeight;
+        
+        
+        }
+   
+     
+      @Override
+    public void draw(Graphics g) { //set shape of projectile
+    g.setColor(Color.BLACK);
+    g.fillRect(getLocation().x, getLocation().y, 20, 20);
+    }
+    
+    public void drunkenMovement(){
+        Random rand = new Random();
+        
+        boolean done = false;
+        
+        while(!done) {
+        int randNum = rand.nextInt(4);
+            if(randNum ==0 && getLocation().y > 0) {
+                Up();
+                done = true;
+                bugStepCount++;
+            }
+            else if(randNum ==1 && getLocation().x < 6 ){
+                Right();
+                done = true;
+                bugStepCount++;
+            }
+            else if(randNum ==2&& getLocation().y < 6){
+                Down();
+                done = true;
+                bugStepCount++;
+            }
+            else if(randNum ==3 && getLocation().x > 0 ){
+                Left();
+                done = true;
+                bugStepCount++;
+            }
+        
+        }
+    }
+     public void Up(){
+            getLocation().y = (getLocation().y - 1);
+
+        }
+    
+      public void Down(){
+         getLocation().y = (getLocation().y + 1);
+
+ }
+       public void Right() {//method that controls how the lasercanon moves right
+        getLocation().x = (getLocation().x + 1);
+
+    }
+     public void Left() {//method that controls how the lasercanon moves left
+        getLocation().x = (getLocation().x - 1);
+
+    } 
+
+    /**
+     * @return the bugStepCount
+     */
+    public int getBugStepCount() {
+        return bugStepCount;
+    }
+
+    /**
+     * @param bugStepCount the bugStepCount to set
+     */
+    public void setBugStepCount(int bugStepCount) {
+        this.bugStepCount = bugStepCount;
+    }
+}
+//--------------------------------------------------------------------------------------------------------------------------
+package drunkenbug;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.event.ActionListener;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class ControlFrame extends JPanel {
+    private JButton Exit;
+    private JButton Start;
+    private JButton Restart;
+    private JButton fastForward;
+    private Floor floor;
+   
+    
+    
+    public ControlFrame(){
+        setSize(100,600);
+        setLayout( new FlowLayout());
+        setBackground(Color.BLUE);
+        setVisible(true);
+        Exit = new JButton("Exit");
+        Start = new JButton("Start");
+        Restart = new JButton("Restart");
+        fastForward = new JButton("Fast Forward");
+        
+        add(Exit);
+        add(Start);
+        add(Restart);
+        add(fastForward);
+    }
+
+    /**
+     * @return the Exit
+     */
+    public JButton getExit() {
+        return Exit;
+    }
+
+   
+    
+    /**
+     * @return the Start
+     */
+    public JButton getStart() {
+        return Start;
+    }
+   
+
+    /**
+     * @return the Restart
+     */
+    public JButton getRestart() {
+        return Restart;
+    }
+    
+    public JButton getFastForward(){
+        return fastForward;
+    }
+    
+    public void setFloor(Floor floor){
+        this.floor = floor;
+        Start.addActionListener(floor);
+        Exit.addActionListener(floor);
+        Restart.addActionListener(floor);
+        fastForward.addActionListener(floor);
+    }
+}
+//---------------------------------------------------------------------------------------------------------------
+package drunkenbug;
+
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.Timer;
+import java.awt.*;
+import java.util.Random;
+import javax.swing.BorderFactory;
+import javax.swing.border.BevelBorder;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class Floor extends JPanel implements ActionListener {
+    private ArrayList<GameObject> gameObjects = new ArrayList<>(); 
+    JLabel num1[][];
+    int Count[][];
+    private Bug bug;
+    private Timer bugTimer;
+    private ControlFrame controls;        
+    private boolean bugOn;
+    private boolean bugDone;
+    
+    public Floor(){
+        bugDone = false;
+        setLayout(new GridLayout(7, 7, 5, 5));
+        bugTimer = new Timer(3000, this);
+        num1 = new JLabel[7][7];
+        Count = new int[7][7];
+        
+        for (int j = 0;j < 7;j++){
+         for(int i = 0; i < 7; i++){
+            
+             num1[i][j] = new JLabel("0", JLabel.CENTER);
+             num1[i][j].setVisible(false);
+             
+             this.add(num1[i][j]);
+         
+        }   
+        }
+        setVisible(true);
+        setPreferredSize(new Dimension(800, 500));
+        setFocusable(true);
+    }
+    public void addGameObject(GameObject go) {
+        getGameObjects().add(go);
+    }
+    
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if(bugOn == false) {
+            g.setColor(Color.BLACK);
+            g.drawString("The Bug game that plays itself!!!", 250, 250);
+        } else if (bugDone == true) {
+            g.drawString("BUG IS FINISH!", 250, 250);
+            g.drawString("BUG STEP COUNT:"+ bug.getBugStepCount(),200,200);
+            
+        }
+        
+        else   {
+        int bugX = bug.getLocation().x;
+        int bugY = bug.getLocation().y;
+        System.out.println(bugX + " " + bugY);
+        JLabel bugLabel =num1[bugX][bugY];
+        int drawX = bugLabel.getX() + bugLabel.getWidth()/2;
+        int drawY = bugLabel.getY() + bugLabel.getHeight()/2;
+
+        g.setColor(Color.BLACK);
+        g.fillRect(drawX - 10, drawY - 10, 20, 20);
+        }
+                 }
+    public ArrayList<GameObject> getGameObjects() {//sets arraylist gameobjects
+        return gameObjects;
+    }
+    public void actionPerformed(ActionEvent ae) {
+        
+       if(ae.getSource() == getControls().getStart() && bugOn == false) {
+        
+        for (int j = 0;j < 7;j++){
+         for(int i = 0; i < 7; i++){
+            
+              num1[i][j].setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
+            num1[i][j].setFont(num1[i][j].getFont().deriveFont(20f));
+             num1[i][j].setVisible(true);
+         
+        }   
+        }
+            bugOn = true;
+            int randomX = 0;
+            int randomY = 0;
+            Random ranny = new Random();
+            randomX = ranny.nextInt(7);
+            randomY = ranny.nextInt(7);
+            Count[randomX][randomY] = 1;
+            num1[randomX][randomY].setText(String.valueOf(1));
+            
+            bug = new Bug(randomX,randomY);
+            getBug().setVisible(true);
+            
+            bugTimer.start();
+            
+            this.requestFocus();
+            
+        }
+        if (ae.getSource() == getControls().getExit()) {//if user is finished and clicks stop. Program shuts off
+            System.exit(0);
+        }
+        if(ae.getSource() == getControls().getRestart() && bugOn == true) {
+            bugDone = false;
+        for (int j = 0;j < 7;j++){
+         for(int i = 0; i < 7; i++){
+             Count[i][j] = 0;
+            num1[i][j].setText("0");
+        
+        }
+         }
+            int randomX = 0;
+            int randomY = 0;
+            Random ranny = new Random();
+            randomX = ranny.nextInt(7);
+            randomY = ranny.nextInt(7);
+            Count[randomX][randomY] = 1;
+            num1[randomX][randomY].setText(String.valueOf(1));
+            bug = new Bug(randomX,randomY);
+            gameObjects.add(getBug());
+            getBug().setVisible(true);
+            
+            bugTimer.start();
+            this.requestFocus();
+        }
+        if(ae.getSource() == getControls().getFastForward() && bugOn == true){
+            bugTimer.setDelay(100);
+            
+            
+        }
+        if(ae.getSource()== bugTimer){
+            
+            bug.drunkenMovement();
+            int bugX = bug.getLocation().x;
+            int bugY = bug.getLocation().y;
+            
+            Count[bugX][bugY]++;
+            num1[bugX][bugY].setText(String.valueOf(Count[bugX][bugY]));
+            bugDone = true;
+            
+        for (int j = 0;j < 7;j++){
+         for(int i = 0; i < 7; i++){
+             if (Count[i][j] == 0){
+             bugDone = false;
+             }
+        }
+         }
+        
+        if(bugDone == true){
+            bugTimer.stop();
+        }
+        
+        }
+            repaint();
+        
+    }
+    public Bug getBug(){
+        return bug;
+    }
+
+    /**
+     * @return the controls
+     */
+    public ControlFrame getControls() {
+        return controls;
+    }
+
+    /**
+     * @param controls the controls to set
+     */
+    public void setControls(ControlFrame controls) {
+        this.controls = controls;
+    }
+    
+}
+//----------------------------------------------------------------------------------------------------------------------------
+package drunkenbug;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import javafx.scene.layout.Border;
+import javax.swing.JFrame;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class Frame extends JFrame {
+    
+    public Frame(){
+        Floor tile = new Floor();
+        setLayout(new BorderLayout());
+        add(tile,BorderLayout.CENTER);
+        //setBackground(Color.BLUE);
+        
+        ControlFrame control = new ControlFrame();
+        control.setBackground(Color.BLUE);
+        add(control,BorderLayout.SOUTH);
+        tile.setControls(control);
+        control.setFloor(tile);
+        
+    }
+    
+}
+//-----------------------------------------------------------------------------------------------------------------------
