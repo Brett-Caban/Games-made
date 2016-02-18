@@ -239,7 +239,7 @@ public class Table extends JPanel implements ActionListener {
              stats.P1score.setText("Player 1: "+String.valueOf(ball.getPlayer1pts()));
              }
              
-             //------------------------------------------------------------------------------
+
              if(ball.getPlayer2pts() == 1){
             stats.P2score.setText("Player 2: "+String.valueOf(ball.getPlayer2pts()));
         }
@@ -588,4 +588,326 @@ public class Balls extends GameObject{
     public void setySpeed(int ySpeed) {
         this.ySpeed = ySpeed;
     }
+}
+//------------------------------------------------------------------------------------------------------------------------
+package pong;
+
+import java.awt.Color;
+import java.awt.Graphics;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class Padels extends GameObject {
+    
+    private final int pnlWidth; 
+    private final int pnlHeight;
+    private final int Length = 50;
+    private final int Width = 20;
+    private final int speed = 30;
+    
+    public Padels(int panelWidth, int panelHeight) { 
+        super();
+        setVisible(true);
+        getLocation().x = panelWidth - 20;
+        getLocation().y = panelHeight - 250;// This is the padel on the right. Do not change
+        pnlWidth = panelWidth;
+        pnlHeight = panelHeight;
+    }
+    
+     public String toString() {
+        String Padel = super.toString() + " " + pnlHeight + " " + pnlWidth + " " + getLocation().x + " " + getLocation().y + " " + speed;
+        return Padel;
+    }
+     
+     public void draw(Graphics g){
+          g.setColor(Color.WHITE);
+        g.fillRect(getLocation().x, getLocation().y, getWidth(), getLength());
+        setVisible(true);
+     }
+    
+     public void moveUp(){
+         getLocation().y = (getLocation().y - speed);
+
+        if (getLocation().y <= 0) {
+            getLocation().y = 0;
+        }
+     }
+     
+     public void moveDown(){
+            getLocation().y = (getLocation().y + speed);
+
+        if (getLocation().y >= pnlHeight - getLength()) {
+            getLocation().y = pnlHeight - getLength();
+        }
+     }
+
+    /**
+     * @return the Length
+     */
+    public int getLength() {
+        return Length;
+    }
+
+    /**
+     * @return the Width
+     */
+    public int getWidth() {
+        return Width;
+    }
+}
+//---------------------------------------------------------------------------------------------------------------------
+package pong;
+
+import java.awt.Color;
+import java.awt.Graphics;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class Padels2 extends GameObject {
+    
+    private final int pnlWidth; 
+    private final int pnlHeight;
+    private final int Length = 50;
+    private final int Width = 20;
+    private final int speed = 30;
+    
+    public Padels2(int panelWidth, int panelHeight) { 
+        super();
+        setVisible(true);
+        getLocation().x = panelWidth - panelWidth; //panelWidth = 800
+        getLocation().y = panelHeight - 250;
+        pnlWidth = panelWidth;
+        pnlHeight = panelHeight;
+    }
+    
+     public String toString() {
+        String Padel = super.toString() + " " + pnlHeight + " " + pnlWidth + " " + getLocation().x + " " + getLocation().y + " " + speed;
+        return Padel;
+    }
+     
+     public void draw(Graphics g){
+          g.setColor(Color.WHITE);
+        g.fillRect(getLocation().x, getLocation().y, getWidth(), getLength());
+        setVisible(true);
+     }
+    
+     public void Up(){
+            getLocation().y = (getLocation().y - speed);
+
+        if (getLocation().y <= 0) {
+            getLocation().y = 0;
+        }
+        }
+       
+     
+     public void Down(){
+         getLocation().y = (getLocation().y + speed);
+
+        if (getLocation().y >= pnlHeight - getLength()) {
+            getLocation().y = pnlHeight - getLength();
+     }
+ }
+
+    /**
+     * @return the Length
+     */
+    public int getLength() {
+        return Length;
+    }
+
+    /**
+     * @return the Width
+     */
+    public int getWidth() {
+        return Width;
+    }
+}
+//-----------------------------------------------------------------------------------------------------------------
+package pong;
+
+import java.awt.Color;
+import java.awt.FlowLayout;
+import javax.swing.JButton;
+import javax.swing.JPanel;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class ControlFrame extends JPanel {
+    private JButton Exit;
+    private JButton Start;
+    private JButton Restart;
+    private Table table;
+    
+    
+    public ControlFrame(){
+        setSize(100,600);
+        setLayout( new FlowLayout());
+        setBackground(Color.BLUE);
+        setVisible(true);
+        Exit = new JButton("Exit");
+        Start = new JButton("Start");
+        Restart = new JButton("Restart");
+        
+        add(Exit);
+        add(Start);
+        add(Restart);
+    }
+
+    /**
+     * @return the Exit
+     */
+    public JButton getExit() {
+        return Exit;
+    }
+
+   
+    
+    /**
+     * @return the Start
+     */
+    public JButton getStart() {
+        return Start;
+    }
+   
+
+    /**
+     * @return the Restart
+     */
+    public JButton getRestart() {
+        return Restart;
+    }
+
+
+    /**
+     * @return the table
+     */
+    public Table getTable() {
+        return table;
+    }
+
+  
+    public void setTable(Table table) {
+        this.table = table;
+        Start.addActionListener(table);
+        Exit.addActionListener(table);
+        Restart.addActionListener(table);
+        
+       
+    }
+    
+    
+    
+}
+//----------------------------------------------------------------------------------------------------------------------
+package pong;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import javax.swing.JFrame;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class GameFrame extends JFrame {
+    
+    public GameFrame(){
+     Table panel = new Table();    
+    setLayout(new BorderLayout());
+    setResizable(false);
+    
+  
+    panel.setBackground(Color.BLACK);
+    add(panel, BorderLayout.CENTER);
+    
+    StatusPanel stats = new StatusPanel();
+    stats.setBackground(Color.BLUE);
+    add(stats, BorderLayout.NORTH);
+    panel.setStats(stats);
+    
+    ControlFrame control = new ControlFrame();
+    control.setBackground(Color.BLUE);
+    add(control, BorderLayout.SOUTH);
+    panel.setControls(control);
+    control.setTable(panel);
+    
+    pack();
+    }
+}
+//-------------------------------------------------------------------------------------------------------------------------
+package pong;
+
+import java.awt.Color;
+import java.awt.FlowLayout;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class StatusPanel extends JPanel {
+    
+    JLabel P1score, P2score;;
+    
+    public StatusPanel(){
+         setSize(100,600);
+        setLayout(new FlowLayout());
+        setBackground(Color.BLUE);
+        setVisible(true);
+        P1score = new JLabel("Player 1: ");
+        P2score = new JLabel("Player 2: ");
+        add(P1score);
+        add(P2score);
+    }
+    
+}
+//--------------------------------------------------------------------------------------------------------------
+package pong;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.Timer;
+
+/**
+ *
+ * @author Brett_Caban
+ */
+public class PointDisplay extends GameObject implements ActionListener {
+
+    private int points;//delcare variables
+    private Timer ptTime;
+    private Table score;
+
+    PointDisplay(int points, Table score, Color color) {//initialize
+        this.points = points;
+        this.score = score;
+        ptTime = new Timer(1000, this);
+        ptTime.start();
+        setColor(color);
+        setLocation(new Point());
+    }
+
+    @Override
+    public void draw(Graphics g) {//drawpoints and gets color of designated alien
+        g.setColor(getColor());
+
+        g.drawString(String.valueOf(points), getLocation().x, getLocation().y);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ae) {//stops points and removes game objects
+        ptTime.stop();
+        score.getTableObjects().remove(this);
+    }
+
 }
